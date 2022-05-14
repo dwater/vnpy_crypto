@@ -1,0 +1,11 @@
+{
+  "font.family": "BiauKai",
+  "font.size": 14,
+  "database.driver": "mongodb",
+  "database.name": "mongodb",
+  "database.database": "vnpy",
+  "database.host": "127.0.0.1",
+  "database.port": 27071,
+  "database.user": "root",
+  "database.password": ""
+}

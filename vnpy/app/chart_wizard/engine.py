@@ -6,7 +6,6 @@ from vnpy.event import Event, EventEngine
 from vnpy.trader.engine import BaseEngine, MainEngine
 from vnpy.trader.constant import Interval
 from vnpy.trader.object import HistoryRequest, ContractData
-from vnpy.trader.rqdata import rqdata_client
 from vnpy.trader.utility import extract_vt_symbol
 from vnpy.trader.database import database_manager
 
@@ -23,7 +22,6 @@ class ChartWizardEngine(BaseEngine):
         """"""
         super().__init__(main_engine, event_engine, APP_NAME)
 
-        rqdata_client.init()
 
     def query_history(
         self,
@@ -47,30 +45,47 @@ class ChartWizardEngine(BaseEngine):
         end: datetime
     ) -> None:
         """"""
-        symbol, exchange = extract_vt_symbol(vt_symbol)
+        contract: ContractData = self.main_engine.get_contract(vt_symbol)
 
         req = HistoryRequest(
-            symbol=symbol,
-            exchange=exchange,
+            symbol=contract.symbol,
+            exchange=contract.exchange,
             interval=interval,
             start=start,
             end=end
         )
 
-        contract: ContractData = self.main_engine.get_contract(vt_symbol)
-        if contract:
-            if contract.history_data:
-                data = self.main_engine.query_history(req, contract.gateway_name)
-            else:
-                data = rqdata_client.query_history(req)
-        else:
-            data = database_manager.load_bar_data(
-                symbol,
-                exchange,
-                interval,
-                start,
-                end
-            )
+        if contract.history_data:
+            data = self.main_engine.query_history(req, contract.gateway_name)
 
-        event = Event(EVENT_CHART_HISTORY, data)
-        self.event_engine.put(event)
+            event = Event(EVENT_CHART_HISTORY, data)
+            self.event_engine.put(event)
+
+
+        # symbol, exchange = extract_vt_symbol(vt_symbol)
+        #
+        # req = HistoryRequest(
+        #     symbol=symbol,
+        #     exchange=exchange,
+        #     interval=interval,
+        #     start=start,
+        #     end=end
+        # )
+        #
+        # contract: ContractData = self.main_engine.get_contract(vt_symbol)
+        # if contract:
+        #     if contract.history_data:
+        #         data = self.main_engine.query_history(req, contract.gateway_name)
+        #     else:
+        #         data = rqdata_client.query_history(req)
+        # else:
+        #     data = database_manager.load_bar_data(
+        #         symbol,
+        #         exchange,
+        #         interval,
+        #         start,
+        #         end
+        #     )
+        #
+        # event = Event(EVENT_CHART_HISTORY, data)
+        # self.event_engine.put(event)

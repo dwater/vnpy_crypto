@@ -299,6 +299,7 @@ vn.py使用Github托管其源代码，如果希望贡献代码请使用github的
 * [社区行为准侧](https://github.com/vnpy/vnpy/blob/dev/.github/CODE_OF_CONDUCT.md)
 * [Issue模板](https://github.com/vnpy/vnpy/blob/dev/.github/ISSUE_TEMPLATE.md)
 * [PR模板](https://github.com/vnpy/vnpy/blob/dev/.github/PULL_REQUEST_TEMPLATE.md)
+* [历史版本](https://github.com/vnpy/vnpy/releases)
 
 ## 版权说明
 

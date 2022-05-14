@@ -20,13 +20,12 @@ dist
 *.local
 
 # vn.py
-.vntrader
-
 # Visual Studio intermediate files
 *.exp
 *.iobj
 *.ipdb
 *.pdb
+log
 
 # Documents
 _build

@@ -6,7 +6,6 @@ from vnpy.trader.database import BarOverview, DB_TZ
 from vnpy.trader.engine import BaseEngine, MainEngine, EventEngine
 from vnpy.trader.constant import Interval, Exchange
 from vnpy.trader.object import BarData, HistoryRequest
-from vnpy.trader.rqdata import rqdata_client
 from vnpy.trader.database import database_manager
 
 
@@ -195,16 +194,10 @@ class ManagerEngine(BaseEngine):
             data = self.main_engine.query_history(
                 req, contract.gateway_name
             )
-        # Otherwise use RQData to query data
-        else:
-            if not rqdata_client.inited:
-                rqdata_client.init()
 
-            data = rqdata_client.query_history(req)
-
-        if data:
-            database_manager.save_bar_data(data)
-            return(len(data))
+            if data:
+                database_manager.save_bar_data(data)
+                return(len(data))
 
         return 0
 
@@ -224,13 +217,13 @@ class ManagerEngine(BaseEngine):
             end=datetime.now(DB_TZ)
         )
 
-        if not rqdata_client.inited:
-            rqdata_client.init()
+        # if not rqdata_client.inited:
+        #     rqdata_client.init()
+        #
+        # data = rqdata_client.query_tick_history(req)
 
-        data = rqdata_client.query_tick_history(req)
-
-        if data:
-            database_manager.save_tick_data(data)
-            return(len(data))
+        # if data:
+        #     database_manager.save_tick_data(data)
+        #     return(len(data))
 
         return 0
