@@ -281,7 +281,7 @@ class BacktestingEngine:
             max_drawdown = df["drawdown"].min()
             max_ddpercent = df["ddpercent"].min()
             max_drawdown_end = df["drawdown"].idxmin()
-            max_drawdown_start = df["balance"][:max_drawdown_end].argmax()
+            max_drawdown_start = df["balance"][:max_drawdown_end].idxmax()
             max_drawdown_duration = (max_drawdown_end - max_drawdown_start).days
 
             total_net_pnl = df["net_pnl"].sum()
@@ -450,6 +450,7 @@ class BacktestingEngine:
         self.spread.bid_volume = tick.bid_volume_1
         self.spread.ask_price = tick.ask_price_1
         self.spread.ask_volume = tick.ask_volume_1
+        self.spread.datetime = tick.datetime
 
         self.strategy.on_spread_data()
 
@@ -504,7 +505,6 @@ class BacktestingEngine:
                 orderid=algo.algoid,
                 tradeid=str(self.trade_count),
                 direction=algo.direction,
-                offset=algo.offset,
                 price=trade_price,
                 volume=algo.volume,
                 datetime=self.datetime,
@@ -538,12 +538,12 @@ class BacktestingEngine:
         strategy: SpreadStrategyTemplate,
         spread_name: str,
         direction: Direction,
-        offset: Offset,
         price: float,
         volume: float,
         payup: int,
         interval: int,
-        lock: bool
+        lock: bool,
+        extra: dict
     ) -> str:
         """"""
         self.algo_count += 1
@@ -554,12 +554,12 @@ class BacktestingEngine:
             algoid,
             self.spread,
             direction,
-            offset,
             price,
             volume,
             payup,
             interval,
-            lock
+            lock,
+            extra
         )
 
         self.algos[algoid] = algo

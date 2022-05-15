@@ -18,6 +18,8 @@ x64
 build
 dist
 *.local
+database.db
+*.db
 
 # vn.py
 # Visual Studio intermediate files

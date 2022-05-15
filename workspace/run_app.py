@@ -3,8 +3,9 @@ from vnpy.event import EventEngine
 from vnpy.trader.engine import MainEngine
 from vnpy.trader.ui import MainWindow, create_qapp
 
-from vnpy.gateway.binance import BinanceGateway
-from vnpy.gateway.binances import BinancesGateway
+from vnpy.gateway.binance import BinanceSpotGateway
+from vnpy.gateway.binance import BinanceUsdtGateway
+from vnpy.gateway.binance import BinanceInverseGateway
 
 from vnpy.app.cta_strategy import CtaStrategyApp  # CTA策略
 from vnpy.app.data_manager import DataManagerApp  # 数据管理, csv_data
@@ -30,11 +31,11 @@ if __name__ == '__main__':
     """
 
     # 币安现货
-    main_engine.add_gateway(BinanceGateway)
+    main_engine.add_gateway(BinanceSpotGateway)
     # 币安正向合约
-    main_engine.add_gateway(BinancesGateway)
+    main_engine.add_gateway(BinanceUsdtGateway)
     # 币安反向合约
-    # main_engine.add_gateway(BinanceInverseGateway)
+    main_engine.add_gateway(BinanceInverseGateway)
 
     # bitmex
     # main_engine.add_gateway(BitmexGateway)

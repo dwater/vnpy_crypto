@@ -1,0 +1,12 @@
+{
+    "class_name": "BollChannelStrategy",
+    "vt_symbol": "BTCUSDT.BINANCE",
+    "interval": "1m",
+    "start": "2022-01-16",
+    "rate": 2.5e-05,
+    "slippage": 0.2,
+    "size": 300.0,
+    "pricetick": 0.2,
+    "capital": 1000000.0,
+    "inverse": false
+}

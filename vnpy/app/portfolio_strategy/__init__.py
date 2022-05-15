@@ -1,14 +1,10 @@
 from pathlib import Path
 
 from vnpy.trader.app import BaseApp
-from vnpy.trader.constant import Direction
-from vnpy.trader.object import TickData, BarData, TradeData, OrderData
-from vnpy.trader.utility import BarGenerator, ArrayManager
-
+from .backtesting import BacktestingEngine
 from .base import APP_NAME
 from .engine import StrategyEngine
 from .template import StrategyTemplate
-from .backtesting import BacktestingEngine
 
 
 class PortfolioStrategyApp(BaseApp):

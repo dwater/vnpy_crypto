@@ -1,11 +1,14 @@
-from typing import Any
+from typing import TYPE_CHECKING
 
-from vnpy.trader.constant import Direction, Offset
+from vnpy.trader.constant import Direction
 from vnpy.trader.object import (TickData, OrderData, TradeData)
 from vnpy.trader.utility import round_to
 
 from .template import SpreadAlgoTemplate
 from .base import SpreadData
+
+if TYPE_CHECKING:
+    from .engine import SpreadAlgoEngine
 
 
 class SpreadTakerAlgo(SpreadAlgoTemplate):
@@ -14,32 +17,39 @@ class SpreadTakerAlgo(SpreadAlgoTemplate):
 
     def __init__(
         self,
-        algo_engine: Any,
+        algo_engine: "SpreadAlgoEngine",
         algoid: str,
         spread: SpreadData,
         direction: Direction,
-        offset: Offset,
         price: float,
         volume: float,
         payup: int,
         interval: int,
-        lock: bool
+        lock: bool,
+        extra: dict
     ):
         """"""
         super().__init__(
-            algo_engine, algoid, spread,
-            direction, offset, price, volume,
-            payup, interval, lock
+            algo_engine,
+            algoid,
+            spread,
+            direction,
+            price,
+            volume,
+            payup,
+            interval,
+            lock,
+            extra
         )
 
     def on_tick(self, tick: TickData):
         """"""
         # Return if there are any existing orders
-        if not self.check_order_finished():
+        if not self.is_order_finished():
             return
 
         # Hedge if active leg is not fully hedged
-        if not self.check_hedge_finished():
+        if not self.is_hedge_finished():
             self.hedge_passive_legs()
             return
 
@@ -62,11 +72,11 @@ class SpreadTakerAlgo(SpreadAlgoTemplate):
             return
 
         # Do nothing if still any existing orders
-        if not self.check_order_finished():
+        if not self.is_order_finished():
             return
 
         # Hedge passive legs if necessary
-        if not self.check_hedge_finished():
+        if not self.is_hedge_finished():
             self.hedge_passive_legs()
 
     def on_trade(self, trade: TradeData):
@@ -75,11 +85,13 @@ class SpreadTakerAlgo(SpreadAlgoTemplate):
 
     def on_interval(self):
         """"""
-        if not self.check_order_finished():
+        if not self.is_order_finished():
             self.cancel_all_order()
 
     def take_active_leg(self):
         """"""
+        active_symbol = self.spread.active_leg.vt_symbol
+
         # Calculate spread order volume of new round trade
         spread_volume_left = self.target - self.traded
 
@@ -92,13 +104,26 @@ class SpreadTakerAlgo(SpreadAlgoTemplate):
 
         # Calculate active leg order volume
         leg_order_volume = self.spread.calculate_leg_volume(
-            self.spread.active_leg.vt_symbol,
+            active_symbol,
             spread_order_volume
         )
 
+        # Check active leg volume left
+        active_volume_target = self.spread.calculate_leg_volume(
+            active_symbol,
+            self.target
+        )
+        active_volume_traded = self.leg_traded[active_symbol]
+        active_volume_left = active_volume_target - active_volume_traded
+
+        if self.direction == Direction.LONG:
+            leg_order_volume = min(leg_order_volume, active_volume_left)
+        else:
+            leg_order_volume = max(leg_order_volume, active_volume_left)
+
         # Send active leg order
         self.send_leg_order(
-            self.spread.active_leg.vt_symbol,
+            active_symbol,
             leg_order_volume
         )
 
@@ -138,7 +163,7 @@ class SpreadTakerAlgo(SpreadAlgoTemplate):
 
         if leg_volume > 0:
             price = leg_tick.ask_price_1 + leg_contract.pricetick * self.payup
-            self.send_long_order(leg.vt_symbol, price, abs(leg_volume))
+            self.send_order(leg.vt_symbol, price, abs(leg_volume), Direction.LONG)
         elif leg_volume < 0:
             price = leg_tick.bid_price_1 - leg_contract.pricetick * self.payup
-            self.send_short_order(leg.vt_symbol, price, abs(leg_volume))
+            self.send_order(leg.vt_symbol, price, abs(leg_volume), Direction.SHORT)

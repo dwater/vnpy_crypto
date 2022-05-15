@@ -1,7 +1,7 @@
 """"""
 
 import importlib
-import os
+import glob
 import traceback
 from collections import defaultdict
 from pathlib import Path
@@ -38,8 +38,9 @@ from vnpy.trader.constant import (
     Offset
 )
 from vnpy.trader.utility import load_json, save_json, extract_vt_symbol, round_to
+from vnpy.trader.datafeed import BaseDatafeed, get_datafeed
 from vnpy.trader.converter import OffsetConverter
-from vnpy.trader.database import database_manager
+from vnpy.trader.database import BaseDatabase, get_database
 
 from .base import (
     APP_NAME,
@@ -73,9 +74,12 @@ class StrategyEngine(BaseEngine):
 
         self.offset_converter: OffsetConverter = OffsetConverter(self.main_engine)
 
+        self.database: BaseDatabase = get_database()
+
     def init_engine(self):
         """
         """
+        # self.init_datafeed()
         self.load_strategy_class()
         self.load_strategy_setting()
         self.load_strategy_data()
@@ -211,6 +215,17 @@ class StrategyEngine(BaseEngine):
         req = order.create_cancel_request()
         self.main_engine.cancel_order(req, order.gateway_name)
 
+    def get_pricetick(self, strategy: StrategyTemplate, vt_symbol: str):
+        """
+        Return contract pricetick data.
+        """
+        contract = self.main_engine.get_contract(vt_symbol)
+
+        if contract:
+            return contract.pricetick
+        else:
+            return None
+
     def load_bars(self, strategy: StrategyTemplate, days: int, interval: Interval):
         """"""
         vt_symbols = strategy.vt_symbols
@@ -276,7 +291,7 @@ class StrategyEngine(BaseEngine):
             data = self.main_engine.query_history(req, contract.gateway_name)
 
             if not data:
-                data = database_manager.load_bar_data(
+                data = self.database.load_bar_data(
                     symbol=symbol,
                     exchange=exchange,
                     interval=interval,
@@ -467,17 +482,11 @@ class StrategyEngine(BaseEngine):
         """
         Load strategy class from certain folder.
         """
-        for dirpath, dirnames, filenames in os.walk(str(path)):
-            for filename in filenames:
-                if filename.endswith(".py"):
-                    strategy_module_name = ".".join(
-                        [module_name, filename.replace(".py", "")])
-                elif filename.endswith(".pyd"):
-                    strategy_module_name = ".".join(
-                        [module_name, filename.split(".")[0]])
-                else:
-                    continue
-
+        for suffix in ["py", "pyd", "so"]:
+            pathname: str = str(path.joinpath(f"*.{suffix}"))
+            for filepath in glob.glob(pathname):
+                stem = Path(filepath).stem
+                strategy_module_name = f"{module_name}.{stem}"
                 self.load_strategy_class_from_module(strategy_module_name)
 
     def load_strategy_class_from_module(self, module_name: str):

@@ -24,6 +24,10 @@ SETTINGS: Dict[str, Any] = {
     "email.sender": "",
     "email.receiver": "",
 
+    "datafeed.name": "",
+    "datafeed.username": "",
+    "datafeed.password": "",
+
     "database.timezone": get_localzone().zone,
     "database.driver": "sqlite",                # see database.Driver
     "database.database": "database.db",         # for sqlite, use this as filepath

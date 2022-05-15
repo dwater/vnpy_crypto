@@ -2,6 +2,8 @@ from typing import Tuple, Dict
 from functools import partial
 from datetime import datetime, timedelta
 
+from pytz import all_timezones
+
 from vnpy.trader.ui import QtWidgets, QtCore
 from vnpy.trader.engine import MainEngine, EventEngine
 from vnpy.trader.constant import Interval, Exchange
@@ -102,6 +104,7 @@ class ManagerWidget(QtWidgets.QWidget):
             "最低价",
             "收盘价",
             "成交量",
+            "成交额",
             "持仓量"
         ]
 
@@ -132,6 +135,9 @@ class ManagerWidget(QtWidgets.QWidget):
         self.clear_tree()
 
         overviews = self.engine.get_bar_overview()
+
+        # 基于合约代码进行排序
+        overviews.sort(key=lambda x: x.symbol)
 
         for overview in overviews:
             key = (overview.symbol, overview.exchange, overview.interval)
@@ -206,12 +212,14 @@ class ManagerWidget(QtWidgets.QWidget):
         symbol = dialog.symbol_edit.text()
         exchange = dialog.exchange_combo.currentData()
         interval = dialog.interval_combo.currentData()
+        tz_name = dialog.tz_combo.currentText()
         datetime_head = dialog.datetime_edit.text()
         open_head = dialog.open_edit.text()
         low_head = dialog.low_edit.text()
         high_head = dialog.high_edit.text()
         close_head = dialog.close_edit.text()
         volume_head = dialog.volume_edit.text()
+        turnover_head = dialog.turnover_edit.text()
         open_interest_head = dialog.open_interest_edit.text()
         datetime_format = dialog.format_edit.text()
 
@@ -220,12 +228,14 @@ class ManagerWidget(QtWidgets.QWidget):
             symbol,
             exchange,
             interval,
+            tz_name,
             datetime_head,
             open_head,
             high_head,
             low_head,
             close_head,
             volume_head,
+            turnover_head,
             open_interest_head,
             datetime_format
         )
@@ -317,7 +327,8 @@ class ManagerWidget(QtWidgets.QWidget):
             self.table.setItem(row, 3, DataCell(str(bar.low_price)))
             self.table.setItem(row, 4, DataCell(str(bar.close_price)))
             self.table.setItem(row, 5, DataCell(str(bar.volume)))
-            self.table.setItem(row, 6, DataCell(str(bar.open_interest)))
+            self.table.setItem(row, 6, DataCell(str(bar.turnover)))
+            self.table.setItem(row, 7, DataCell(str(bar.open_interest)))
 
     def delete_data(
         self,
@@ -474,12 +485,17 @@ class ImportDialog(QtWidgets.QDialog):
             if i != Interval.TICK:
                 self.interval_combo.addItem(str(i.name), i)
 
+        self.tz_combo = QtWidgets.QComboBox()
+        self.tz_combo.addItems(all_timezones)
+        self.tz_combo.setCurrentIndex(self.tz_combo.findText("Asia/Shanghai"))
+
         self.datetime_edit = QtWidgets.QLineEdit("datetime")
         self.open_edit = QtWidgets.QLineEdit("open")
         self.high_edit = QtWidgets.QLineEdit("high")
         self.low_edit = QtWidgets.QLineEdit("low")
         self.close_edit = QtWidgets.QLineEdit("close")
         self.volume_edit = QtWidgets.QLineEdit("volume")
+        self.turnover_edit = QtWidgets.QLineEdit("turnover")
         self.open_interest_edit = QtWidgets.QLineEdit("open_interest")
 
         self.format_edit = QtWidgets.QLineEdit("%Y-%m-%d %H:%M:%S")
@@ -500,6 +516,7 @@ class ImportDialog(QtWidgets.QDialog):
         form.addRow("代码", self.symbol_edit)
         form.addRow("交易所", self.exchange_combo)
         form.addRow("周期", self.interval_combo)
+        form.addRow("时区", self.tz_combo)
         form.addRow(QtWidgets.QLabel())
         form.addRow(head_label)
         form.addRow("时间戳", self.datetime_edit)
@@ -508,6 +525,7 @@ class ImportDialog(QtWidgets.QDialog):
         form.addRow("最低价", self.low_edit)
         form.addRow("收盘价", self.close_edit)
         form.addRow("成交量", self.volume_edit)
+        form.addRow("成交额", self.turnover_edit)
         form.addRow("持仓量", self.open_interest_edit)
         form.addRow(QtWidgets.QLabel())
         form.addRow(format_label)
